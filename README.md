@@ -1,4 +1,4 @@
-# adventofcode2021
+# adventofcode2022
 
 Run solutions as follows:
 
