@@ -1,16 +1,8 @@
-from typing import NamedTuple
-
-
-class Position(NamedTuple):
-    x: int
-    y: int
-
-
 HEADINGS = {
-    "U": (0, +1),
-    "D": (0, -1),
-    "L": (-1, 0),
-    "R": (+1, 0),
+    "U": complex(0, +1),
+    "D": complex(0, -1),
+    "L": complex(-1, 0),
+    "R": complex(+1, 0),
 }
 
 
@@ -21,25 +13,23 @@ def parse_motions(data):
 
 
 def follow(head, tail):
-    dx = head.x - tail.x
-    dy = head.y - tail.y
+    dp = head - tail
 
-    if abs(dx) < 2 and abs(dy) < 2:
-        return tail
+    if abs(dp.real) > 1 or abs(dp.imag) > 1:
+        real = max(dp.real, -1) if dp.real < 0 else min(dp.real, +1)
+        imag = max(dp.imag, -1) if dp.imag < 0 else min(dp.imag, +1)
+        tail += complex(real, imag)
 
-    cx = max(dx, -1) if dx < 0 else min(dx, 1)
-    cy = max(dy, -1) if dy < 0 else min(dy, 1)
-
-    return Position(tail.x + cx, tail.y + cy)
+    return tail
 
 
 def count_visited(motions, length):
-    rope = [Position(0, 0) for _ in range(length)]
+    rope = [complex(0, 0) for _ in range(length)]
     visited = {rope[-1]}
 
-    for (dx, dy), distance in motions:
+    for heading, distance in motions:
         for _ in range(distance):
-            rope[0] = Position(rope[0].x + dx, rope[0].y + dy)
+            rope[0] = rope[0] + heading
             for i in range(1, length):
                 rope[i] = follow(rope[i - 1], rope[i])
             visited.add(rope[-1])
