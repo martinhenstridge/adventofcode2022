@@ -16,9 +16,9 @@ def find_common_among_halves(rucksacks):
 def find_common_among_threes(rucksacks):
     for i in range(len(rucksacks) // 3):
         common = (
-            set(rucksacks[0 + i * 3]) &
-            set(rucksacks[1 + i * 3]) &
-            set(rucksacks[2 + i * 3])
+            set(rucksacks[0 + i * 3])
+            & set(rucksacks[1 + i * 3])
+            & set(rucksacks[2 + i * 3])
         )
         yield get_priority(common.pop())
 

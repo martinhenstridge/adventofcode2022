@@ -8,10 +8,7 @@ def parse_pairs(data):
 
 
 def one_contains_other(a_lo, a_hi, b_lo, b_hi):
-    return (
-        (a_lo <= b_lo and a_hi >= b_hi) or
-        (b_lo <= a_lo and b_hi >= a_hi)
-    )
+    return (a_lo <= b_lo and a_hi >= b_hi) or (b_lo <= a_lo and b_hi >= a_hi)
 
 
 def one_overlaps_other(a_lo, a_hi, b_lo, b_hi):

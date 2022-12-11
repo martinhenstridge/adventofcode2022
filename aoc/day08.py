@@ -66,9 +66,9 @@ def scenic_score(grid, rows, cols, row, col):
 
     score = 1
     score *= viewing_distance_along_row(grid, height, col, range(row + 1, rows))
-    score *= viewing_distance_along_row(grid, height, col, range(row -1, -1, -1))
+    score *= viewing_distance_along_row(grid, height, col, range(row - 1, -1, -1))
     score *= viewing_distance_along_col(grid, height, row, range(col + 1, cols))
-    score *= viewing_distance_along_col(grid, height, row, range(col -1, -1, -1))
+    score *= viewing_distance_along_col(grid, height, row, range(col - 1, -1, -1))
 
     return score
 
@@ -80,7 +80,8 @@ def run(data):
     visible_count = sum(int(tree) for row in visible for tree in row)
     max_scenic_score = max(
         scenic_score(grid, rows, cols, row, col)
-        for row in range(rows) for col in range(cols)
+        for row in range(rows)
+        for col in range(cols)
     )
 
     return visible_count, max_scenic_score

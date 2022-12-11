@@ -6,7 +6,7 @@ def split_input_data(data):
     lines = data.splitlines()
     for idx, line in enumerate(lines):
         if not line:
-            return lines[:idx], lines[idx + 1:]
+            return lines[:idx], lines[idx + 1 :]
 
 
 def parse_stacks(lines):
