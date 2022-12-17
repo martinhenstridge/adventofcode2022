@@ -27,7 +27,7 @@ def simulate(chamber, highest, wind_iter, shape_iter):
     chamber.update(rock)
     highest = max(1 + max(p.imag for p in rock), highest)
 
-    return chamber, highest
+    return chamber, int(highest)
 
 
 def calculate_height(history, offset, period, iterations):
@@ -56,13 +56,13 @@ def run(data):
         chamber, highest = simulate(chamber, highest, wind_iter, shape_iter)
 
     # Run through a complete cycle, collecting height history
-    history = []
+    history = [highest]
     for _ in range(period):
         chamber, highest = simulate(chamber, highest, wind_iter, shape_iter)
-        history.append(int(highest))
+        history.append(highest)
 
     # Extrapolate height for the requested rock counts.
-    part1 = calculate_height(history, offset, period, 2022 - 1)
-    part2 = calculate_height(history, offset, period, 1000000000000 - 1)
+    part1 = calculate_height(history, offset, period, 2022)
+    part2 = calculate_height(history, offset, period, 1000000000000)
 
     return part1, part2
