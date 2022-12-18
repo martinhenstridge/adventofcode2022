@@ -11,15 +11,11 @@ def parse_sensor_data(data):
         yield (int(match[1]), int(match[2])), (int(match[3]), int(match[4]))
 
 
-def manhattan(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])
-
-
 def find_excluded_spans(sensors, row):
-    for position, beacon in sensors:
-        along = manhattan(position, beacon) - abs(position[1] - row)
+    for (px, py), (bx, by) in sensors:
+        along =  abs(px - bx) + abs(py - by) - abs(py - row)
         if along >= 0:
-            yield position[0] - along, position[0] + along
+            yield px - along, px + along
 
 
 def combine_spans(spans):
