@@ -48,7 +48,9 @@ def find_excluded_count(sensors, row):
 
 
 def find_tuning_frequency(sensors, limit):
-    for row in range(limit):
+    # The solution happens to be nearer the upper bound than the lower,
+    # so search backwards to find it faster.
+    for row in range(limit, -1, -1):
         excluded = tuple(combine_spans(find_excluded_spans(sensors, row)))
         if len(excluded) > 1:
             return row + 4000000 * (excluded[0][1] + 1)
