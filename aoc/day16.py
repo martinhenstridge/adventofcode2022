@@ -1,8 +1,12 @@
 import re
+import math
+import collections
 
 
 def parse_valves(data):
-    valves = {}
+    rates = {}
+    links = collections.defaultdict(lambda: math.inf)
+
     for line in data.splitlines():
         match = re.fullmatch(
             r"Valve ([A-Z]+) has flow rate=(\d+);"
@@ -10,25 +14,30 @@ def parse_valves(data):
             line,
         )
         valve = match[1]
-        rate = int(match[2])
-        options = match[3].split(", ")
+        rates[valve] = int(match[2])
+        for other in match[3].split(", "):
+            links[valve, other] = 1
 
-        valves[valve] = rate, options
-    return valves
+    return rates, links
 
 
 def run(data):
-    valves = parse_valves(data)
-    edges = set()
-    for k, v in valves.items():
-        for o in v[1]:
-            edges.add(tuple(sorted((k, o))))
+    rates, links = parse_valves(data)
 
-    for e in edges:
-        print(" -- ".join(e) + ";")
+    valves = tuple(rates)
+    for k in valves:
+        for i in valves:
+            for j in valves:
+                links[i, j] = min(links[i, j], links[i, k] + links[k, j])
 
-    print("AA [style=filled,color=red];")
-    for k, v in valves.items():
-        if v[0]:
-            print(f"{k} [style=filled,color=blue];")
+    ds = {}
+    for (a, b), d in links.items():
+        if (a == "AA" or rates[a] > 0) and (b == "AA" or rates[b] > 0):
+            ds[a, b] = d
+
+    for k, v in ds.items():
+        print(k, v)
+
+    print(len(links), len(ds))
+
     return 0, 0
