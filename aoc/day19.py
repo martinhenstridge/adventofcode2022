@@ -50,12 +50,7 @@ def search(costs, robots, duration, cache_size):
     depth = 0
 
     while queue:
-        state = queue.pop(0)
-        if state in seen:
-            continue
-        seen.add(state)
-
-        t, robots, funds, mined = state
+        t, robots, funds, mined = queue.pop(0)
 
         if t == duration:
             best = max(best, mined[3])
@@ -66,25 +61,38 @@ def search(costs, robots, duration, cache_size):
             queue = queue[:cache_size]
             depth = t
 
-        # Consider not buying any robots.
-        queue.append(
-            (
-                t + 1,
-                robots,
-                tuple(funds[i] + robots[i] for i in range(4)),
-                tuple(mined[i] + robots[i] for i in range(4)),
-            )
-        )
+        # Whatever we do on the current timestep, the same number of
+        # minerals will always be mined.
+        next_mined = tuple(mined[i] + robots[i] for i in range(4))
+        next_funds = tuple(funds[i] + robots[i] for i in range(4))
 
-        # Consider buying each robot that can be afforded.
-        for robot in range(4):
-            next_mined = tuple(mined[i] + robots[i] for i in range(4))
-            if all(funds[i] >= costs[robot][i] for i in range(4)):
-                next_funds = tuple(
-                    funds[i] + robots[i] - costs[robot][i] for i in range(4)
-                )
-                next_robots = tuple(robots[i] + int(i == robot) for i in range(4))
-                queue.append((t + 1, next_robots, next_funds, next_mined))
+        # Always buy a geode mining robot when possible.
+        _robots = (robots[0], robots[1], robots[2], robots[3] + 1)
+        _funds = tuple(next_funds[i] - costs[3][i] for i in range(4))
+        if all(funds[i] >= costs[3][i] for i in range(4)):
+            state = (t + 1, _robots, _funds, next_mined)
+            if state not in seen:
+                queue.append(state)
+            continue
+
+        # Consider buying each other type of robot that can be afforded.
+        for r in range(3):
+            if all(funds[i] >= costs[r][i] for i in range(4)):
+                _robots = tuple(robots[i] + int(i == r) for i in range(4))
+                _funds = tuple(next_funds[i] - costs[r][i] for i in range(4))
+                state = (t + 1, _robots, _funds, next_mined)
+                if state not in seen:
+                    queue.append(state)
+
+        # Finally, consider not buying any robots.
+        state = (
+            t + 1,
+            robots,
+            tuple(funds[i] + robots[i] for i in range(4)),
+            next_mined,
+        )
+        if state not in seen:
+            queue.append(state)
 
     return best
 
@@ -95,7 +103,7 @@ def run(data):
     sum_quality_levels = 0
     for n, costs in blueprints:
         sum_quality_levels += n * search(
-            costs, robots=(1, 0, 0, 0), duration=24, cache_size=256
+            costs, robots=(1, 0, 0, 0), duration=24, cache_size=64
         )
 
     product_max_geodes = 1
