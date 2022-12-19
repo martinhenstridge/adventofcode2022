@@ -45,7 +45,6 @@ def heuristic(robots):
 def search(costs, robots, duration, cache_size):
     maxcost = tuple(max(cost) for cost in zip(*costs))
     best = 0
-    depth = 0
 
     state = (0, robots, (0, 0, 0, 0), 0)
     queue = [state]
@@ -58,10 +57,10 @@ def search(costs, robots, duration, cache_size):
             best = max(best, funds[3])
             continue
 
-        if t > depth:
+        # Periodically sort the queued states and discard the worst.
+        if len(queue) > cache_size * 2:
             queue.sort(key=lambda state: state[3], reverse=True)
             queue = queue[:cache_size]
-            depth = t
 
         # Whatever we do on the current timestep, the same number of
         # minerals will always be mined.
@@ -115,7 +114,7 @@ def run(data):
     sum_quality_levels = 0
     for n, costs in blueprints:
         sum_quality_levels += n * search(
-            costs, robots=(1, 0, 0, 0), duration=24, cache_size=100
+            costs, robots=(1, 0, 0, 0), duration=24, cache_size=200
         )
 
     product_max_geodes = 1
