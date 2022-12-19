@@ -38,61 +38,61 @@ def parse_blueprints(data):
         yield ident, blueprint
 
 
-def heuristic(state):
-    _, _, _, mined = state
-    return 1000 * mined[3] + 100 * mined[2] + 10 * mined[1] + mined[0]
+def heuristic(robots):
+    return 1000 * robots[3] + 100 * robots[2] + 10 * robots[1] + robots[0]
 
 
 def search(costs, robots, duration, cache_size):
     maxcost = tuple(max(cost) for cost in zip(*costs))
     best = 0
     depth = 0
-    seen = set()
 
-    state = (0, robots, (0, 0, 0, 0), (0, 0, 0, 0))
+    state = (0, robots, (0, 0, 0, 0), 0)
     queue = [state]
+    seen = set()
 
     while queue:
         t, robots, funds, mined = queue.pop(0)
 
         if t == duration:
-            best = max(best, mined[3])
+            best = max(best, funds[3])
             continue
 
         if t > depth:
-            queue.sort(key=heuristic, reverse=True)
+            queue.sort(key=lambda state: state[3], reverse=True)
             queue = queue[:cache_size]
             depth = t
 
         # Whatever we do on the current timestep, the same number of
         # minerals will always be mined.
-        next_mined = tuple(mined[i] + robots[i] for i in range(4))
-        next_funds = tuple(funds[i] + robots[i] for i in range(4))
+        mined += heuristic(robots)
 
         # Always buy a geode mining robot when possible.
         _robots = (robots[0], robots[1], robots[2], robots[3] + 1)
-        _funds = tuple(next_funds[i] - costs[3][i] for i in range(4))
+        _funds = tuple(funds[i] + robots[i] - costs[3][i] for i in range(4))
         if all(funds[i] >= costs[3][i] for i in range(4)):
-            state = (t + 1, _robots, _funds, next_mined)
+            state = (t + 1, _robots, _funds, mined)
             if state not in seen:
                 queue.append(state)
             continue
 
         # Consider buying each other type of robot that can be afforded.
-        for r in range(3):
+        for robot in range(3):
+            cost = costs[robot]
+
             # No point buying more robots to mine a particular mineral
             # if we're already mining enough to buy the most expensive
             # robot at every opportunity.
-            if robots[r] >= maxcost[r]:
+            if robots[robot] >= maxcost[robot]:
                 continue
 
             # Can't afford the robot.
-            if any(funds[i] < costs[r][i] for i in range(4)):
+            if any(funds[i] < cost[i] for i in range(4)):
                 continue
 
-            _robots = tuple(robots[i] + int(i == r) for i in range(4))
-            _funds = tuple(next_funds[i] - costs[r][i] for i in range(4))
-            state = (t + 1, _robots, _funds, next_mined)
+            _robots = tuple(robots[i] + int(i == robot) for i in range(4))
+            _funds = tuple(funds[i] + robots[i] - cost[i] for i in range(4))
+            state = (t + 1, _robots, _funds, mined)
             if state not in seen:
                 queue.append(state)
 
@@ -101,7 +101,7 @@ def search(costs, robots, duration, cache_size):
             t + 1,
             robots,
             tuple(funds[i] + robots[i] for i in range(4)),
-            next_mined,
+            mined,
         )
         if state not in seen:
             queue.append(state)
