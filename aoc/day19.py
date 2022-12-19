@@ -44,10 +44,13 @@ def heuristic(state):
 
 
 def search(costs, robots, duration, cache_size):
+    maxcost = tuple(max(cost) for cost in zip(*costs))
     best = 0
-    seen = set()
-    queue = [(0, robots, (0, 0, 0, 0), (0, 0, 0, 0))]
     depth = 0
+    seen = set()
+
+    state = (0, robots, (0, 0, 0, 0), (0, 0, 0, 0))
+    queue = [state]
 
     while queue:
         t, robots, funds, mined = queue.pop(0)
@@ -77,12 +80,21 @@ def search(costs, robots, duration, cache_size):
 
         # Consider buying each other type of robot that can be afforded.
         for r in range(3):
-            if all(funds[i] >= costs[r][i] for i in range(4)):
-                _robots = tuple(robots[i] + int(i == r) for i in range(4))
-                _funds = tuple(next_funds[i] - costs[r][i] for i in range(4))
-                state = (t + 1, _robots, _funds, next_mined)
-                if state not in seen:
-                    queue.append(state)
+            # No point buying more robots to mine a particular mineral
+            # if we're already mining enough to buy the most expensive
+            # robot at every opportunity.
+            if robots[r] >= maxcost[r]:
+                continue
+
+            # Can't afford the robot.
+            if any(funds[i] < costs[r][i] for i in range(4)):
+                continue
+
+            _robots = tuple(robots[i] + int(i == r) for i in range(4))
+            _funds = tuple(next_funds[i] - costs[r][i] for i in range(4))
+            state = (t + 1, _robots, _funds, next_mined)
+            if state not in seen:
+                queue.append(state)
 
         # Finally, consider not buying any robots.
         state = (
@@ -103,13 +115,13 @@ def run(data):
     sum_quality_levels = 0
     for n, costs in blueprints:
         sum_quality_levels += n * search(
-            costs, robots=(1, 0, 0, 0), duration=24, cache_size=64
+            costs, robots=(1, 0, 0, 0), duration=24, cache_size=100
         )
 
     product_max_geodes = 1
-    for _, costs in blueprints[:3]:
+    for n, costs in blueprints[:3]:
         product_max_geodes *= search(
-            costs, robots=(1, 0, 0, 0), duration=32, cache_size=8192
+            costs, robots=(1, 0, 0, 0), duration=32, cache_size=6400
         )
 
     return sum_quality_levels, product_max_geodes
