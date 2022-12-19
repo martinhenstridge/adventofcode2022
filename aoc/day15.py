@@ -13,7 +13,7 @@ def parse_sensor_data(data):
 
 def find_excluded_spans(sensors, row):
     for (px, py), (bx, by) in sensors:
-        along =  abs(px - bx) + abs(py - by) - abs(py - row)
+        along = abs(px - bx) + abs(py - by) - abs(py - row)
         if along >= 0:
             yield px - along, px + along
 
