@@ -21,28 +21,55 @@ def link(numbers):
 
 
 def mix_number(numbers, number):
-    times = number.value % (len(numbers) - 1)
+    # Avoid multiple laps around the ring. The -1 arises from the fact
+    # that it only takes n-1 moves to return to the original ordering
+    # for an n-element ring. For example, consider the value 'N' moving
+    # around a ring containing 4 elements:
+    #
+    # start:   N x y z  ==  N x y z
+    # step 1:  x N y z  ==  N y z x
+    # step 2:  x y N z  ==  N z x y
+    # step 3:  x y z N  ==  N x y z
+    #
+    # After 3 steps (= 4-1) the ordering is the same as it was at the
+    # start, i.e. 'N' resides after 'z' and before 'x'.
+    moves = number.value % (len(numbers) - 1)
 
-    if times == 0:
+    # Early exit if the destination is the same as the starting point.
+    if moves == 0:
         return
+
+    # Optimisation: if the destination is more than half way around the
+    # ring moving clockwise, move anti-clockwise instead.
+    reverse = moves > len(numbers) // 2
+    if reverse:
+        moves = len(numbers) - 1 - moves
 
     # Unlink number from its neighbours
     number._next._prev = number._prev
     number._prev._next = number._next
 
     # Find new home
-    for _ in range(times):
-        number._prev = number._next
-        number._next = number._next._next
+    if reverse:
+        for _ in range(moves):
+            number._next = number._prev
+            number._prev = number._prev._prev
+    else:
+        for _ in range(moves):
+            number._prev = number._next
+            number._next = number._next._next
 
     # Link number to new neighbours
     number._next._prev = number
     number._prev._next = number
 
 
-def mix(numbers, times):
+def mix(numbers, rounds, multiplier):
     link(numbers)
-    for _ in range(times):
+    for number in numbers:
+        number.value *= multiplier
+
+    for _ in range(rounds):
         for number in numbers:
             mix_number(numbers, number)
 
@@ -58,12 +85,10 @@ def run(data):
     numbers = [Number(line) for line in data.splitlines()]
     zero = next(n for n in numbers if n.value == 0)
 
-    mix(numbers, 1)
+    mix(numbers, 1, 1)
     sum1 = sum(find(numbers, zero, idx).value for idx in (1000, 2000, 3000))
 
-    for number in numbers:
-        number.value *= 811589153
-    mix(numbers, 10)
+    mix(numbers, 10, 811589153)
     sum2 = sum(find(numbers, zero, idx).value for idx in (1000, 2000, 3000))
 
     return sum1, sum2
