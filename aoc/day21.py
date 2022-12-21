@@ -23,17 +23,17 @@ def calculate(op, a, b):
     assert False
 
 
-def find_chain(unknown, start):
+def find_dependency_chain(unknown, start):
     parents = {}
     for k, (_, a, b) in unknown.items():
         parents[a] = k
         parents[b] = k
 
-    chain = []
+    chain = {}
     child = start
     while child in parents:
         child = parents[child]
-        chain.append(child)
+        chain[child] = unknown.pop(child)
 
     return chain
 
@@ -49,22 +49,17 @@ def resolve_fixed(known, unknown):
         unknown = still_unknown
 
 
-def solve_chain_forwards(chain, known, pending, start):
-    known = known.copy()
-
+def solve_chain_forwards(chain, known, start):
     known["humn"] = start
-    for x in chain:
-        op, a, b = pending[x]
+    for x, (op, a, b) in chain.items():
         known[x] = calculate(op, known[a], known[b])
 
     return known["root"]
 
 
-def solve_chain_backwards(chain, known, pending):
-    known = known.copy()
-
+def solve_chain_backwards(chain, known):
     # Special case root, which now performs an equality check.
-    _, a, b = pending.pop(chain[-1])
+    _, a, b = chain.pop("root")
     if a in known:
         known[b] = known[a]
     else:
@@ -72,8 +67,7 @@ def solve_chain_backwards(chain, known, pending):
 
     # Work backwards up the chain, inverting each operation to find the
     # input required to generate the known result.
-    for x in reversed(chain[:-1]):
-        op, a, b = pending[x]
+    for x, (op, a, b) in reversed(chain.items()):
         if op == "+":
             if a in known:
                 known[b] = known[x] - known[a]
@@ -100,19 +94,18 @@ def solve_chain_backwards(chain, known, pending):
 
 def run(data):
     known, unknown = parse_monkeys(data)
+    original = known.pop("humn")
 
     # Separate those monkeys whose unknown values depend on the value
     # yelled by "humn" from those which can be fixed irrespective of
     # that value.
-    original = known.pop("humn")
-    chain = find_chain(unknown, "humn")
-    pending = {x: unknown.pop(x) for x in chain}
+    chain = find_dependency_chain(unknown, "humn")
 
-    # Resolve those monkeys whose value is unaffected by the value
+    # Resolve those monkeys whose values are unaffected by the value
     # yelled by "humn".
     resolve_fixed(known, unknown)
 
-    part1 = solve_chain_forwards(chain, known, pending, original)
-    part2 = solve_chain_backwards(chain, known, pending)
+    part1 = solve_chain_forwards(chain, known.copy(), original)
+    part2 = solve_chain_backwards(chain, known.copy())
 
     return part1, part2
