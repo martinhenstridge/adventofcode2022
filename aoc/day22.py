@@ -13,10 +13,12 @@ def parse_board_instructions(data):
 
     board = []
     lines = data_board.splitlines()
-    maxlen = max(len(line) for line in lines)
+    maxlen = 1 + max(len(line) for line in lines)
+    board.append(" " * maxlen)
     for line in data_board.splitlines():
-        row = line + " " * (maxlen - len(line))
+        row = " " + line + " " * (maxlen - len(line))
         board.append(row)
+    board.append(" " * maxlen)
 
     instructions = []
     for i in data_instructions.replace("L", ",L,").replace("R", ",R,").split(","):
@@ -49,38 +51,46 @@ def next_tile(board, row, col, facing):
     return row, col
 
 
-def move(board, row, col, facing, count):
+def oob_wrap(board, row, col, facing):
+    while board[row][col] == " ":
+        row, col = next_tile(board, row, col, facing)
+    return row, col, facing
+
+
+def oob_cube(board, row, col, facing):
+    pass
+
+
+def move(board, row, col, facing, count, oob):
     r, c = row, col
 
     for _ in range(count):
         r, c = next_tile(board, row, col, facing)
-        tile = board[r][c]
 
-        while tile == " ":
-            r, c = next_tile(board, r, c, facing)
-            tile = board[r][c]
+        if board[r][c] == " ":
+            r, c, facing = oob(board, r, c, facing)
 
-        if tile == "#":
+        if board[r][c] == "#":
             break
 
-        if tile == ".":
+        if board[r][c] == ".":
             row, col = r, c
 
     return row, col
 
 
 def calculate_password(row, col, facing):
-    return 1000 * (row + 1) + 4 * (col + 1) + facing
+    return 1000 * row + 4 * col + facing
 
 
-def follow_instructions(board, instructions, row, col, facing):
+def follow_instructions(board, instructions, row, col, facing, oob):
     for instruction in instructions:
         if instruction == "L":
             facing = Facing((facing - 1) % 4)
         elif instruction == "R":
             facing = Facing((facing + 1) % 4)
         else:
-            row, col = move(board, row, col, facing, instruction)
+            row, col = move(board, row, col, facing, instruction, oob)
 
     return calculate_password(row, col, facing)
 
@@ -88,10 +98,10 @@ def follow_instructions(board, instructions, row, col, facing):
 def run(data):
     board, instructions = parse_board_instructions(data)
 
-    row = 0
-    col = board[0].find(".")
+    row = 1
+    col = board[row].find(".")
     facing = Facing.RIGHT
 
-    password = follow_instructions(board, instructions, row, col, facing)
+    password = follow_instructions(board, instructions, row, col, facing, oob_wrap)
 
     return password, 0
