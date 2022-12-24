@@ -39,22 +39,20 @@ def advance_blizzards(blizzards, xmax, ymax):
     for which, x, y in blizzards:
         if which == "^":
             y -= 1
+            if y == 0:
+                y = ymax - 1
         elif which == "v":
             y += 1
+            if y == ymax:
+                y = 1
         elif which == "<":
             x -= 1
+            if x == 0:
+                x = xmax - 1
         elif which == ">":
             x += 1
-
-        if y == 0:
-            y = ymax - 1
-        elif y == ymax:
-            y = 1
-        elif x == 0:
-            x = xmax - 1
-        elif x == xmax:
-            x = 1
-
+            if x == xmax:
+                x = 1
         advanced.append((which, x, y))
 
     return advanced
