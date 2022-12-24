@@ -10,7 +10,7 @@ def parse_valves(data):
     for line in data.splitlines():
         match = re.fullmatch(
             r"Valve ([A-Z]+) has flow rate=(\d+);"
-            r" tunnel(?:s?) lead(?:s?) to valve(?:s?) (.+)",
+            r" tunnels? leads? to valves? (.+)",
             line,
         )
         valve = match[1]
