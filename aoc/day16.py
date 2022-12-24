@@ -48,16 +48,16 @@ def run(data):
             for j in valves:
                 links[i, j] = min(links[i, j], links[i, k] + links[k, j])
 
-    # Transform shortest path data into a more convenient format, and
-    # increment each value by 1 to account for the time taken to open
-    # the valve.
+    # Transform shortest path data into a more convenient format,
+    # removing valves with zero flow rate and incrementing each
+    # "distance" by 1 to account for the time taken to open the valve
+    # after reaching it.
     options = collections.defaultdict(dict)
     for (a, b), d in links.items():
         if (
             a != b
-            and b != "AA"
+            and rates[b] > 0
             and (a == "AA" or rates[a] > 0)
-            and (b == "AA" or rates[b] > 0)
         ):
             options[a][b] = d + 1
 
