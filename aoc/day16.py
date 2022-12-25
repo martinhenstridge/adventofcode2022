@@ -9,8 +9,7 @@ def parse_valves(data):
 
     for line in data.splitlines():
         match = re.fullmatch(
-            r"Valve ([A-Z]+) has flow rate=(\d+);"
-            r" tunnels? leads? to valves? (.+)",
+            r"Valve ([A-Z]+) has flow rate=(\d+);" r" tunnels? leads? to valves? (.+)",
             line,
         )
         valve = match[1]
@@ -21,20 +20,26 @@ def parse_valves(data):
     return rates, links
 
 
-def search(rates, options, current_valve, open_valves, time_remaining):
-    if time_remaining <= 0:
-        return 0
+def search(rates, options, current_valve, open_valves, time_remaining, flow, results):
+    if flow > results[open_valves]:
+        results[open_valves] = flow
 
-    best = 0
     for v, t in options[current_valve].items():
+        new_time_remaining = time_remaining - t
         if v in open_valves:
             continue
-        total = (time_remaining - t) * rates[v] + search(
-            rates, options, v, open_valves | frozenset([v]), time_remaining - t
+        if new_time_remaining <= 0:
+            continue
+        search(
+            rates,
+            options,
+            v,
+            open_valves | frozenset([v]),
+            new_time_remaining,
+            flow + new_time_remaining * rates[v],
+            results,
         )
-        if total > best:
-            best = total
-    return best
+    return results
 
 
 def run(data):
@@ -54,14 +59,21 @@ def run(data):
     # after reaching it.
     options = collections.defaultdict(dict)
     for (a, b), d in links.items():
-        if (
-            a != b
-            and rates[b] > 0
-            and (a == "AA" or rates[a] > 0)
-        ):
+        if a != b and rates[b] > 0 and (a == "AA" or rates[a] > 0):
             options[a][b] = d + 1
 
-    best1 = search(rates, options, "AA", frozenset(), 30)
-    best2 = 0
+    results1 = search(
+        rates, options, "AA", frozenset(), 30, 0, collections.defaultdict(int)
+    )
+    results2 = search(
+        rates, options, "AA", frozenset(), 26, 0, collections.defaultdict(int)
+    )
+    best1 = max(results1.values())
+    best2 = max(
+        v1 + v2
+        for k1, v1 in results2.items()
+        for k2, v2 in results2.items()
+        if not k1 & k2
+    )
 
     return best1, best2
